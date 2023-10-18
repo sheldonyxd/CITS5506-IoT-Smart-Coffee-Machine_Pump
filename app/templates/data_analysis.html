@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="../static/jquery.min.js"></script>
+    <link href="../static/bootstrap.min.css" rel="stylesheet">
+
+    <title>SMART COFFEE PUMP</title>
+    <style>
+        .title {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .chart-container {
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+            padding: 20px;
+        }
+
+        .chart-container {
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container mt-4">
+        <div class="alert alert-danger fade show custom-alert" role="alert" style="display: none;">
+            <strong>Error:</strong> Sensor Error!
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="display: none;"></button>
+        </div>
+        
+        <div class="alert alert-info custom-alert" role="alert" style="display: none;">
+            <strong>Info:</strong> Water pouring
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="display: none;"></button>
+        </div>
+        
+        <div id="Overflow" class="alert alert-warning fade show custom-alert" role="alert" style="display: none;">
+            <strong>Warning:</strong> Overflow!
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="display: none;"></button>
+        </div>
+        
+        <div class="alert alert-warning" role="alert" style="display: none;">
+            <strong>Warning:</strong> Low Water Level
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="display: none;"></button>
+        </div>
+        
+        <div class="alert alert-secondary fade show custom-alert" role="alert" style="display: none;">
+            <strong>Message:</strong> Empty Water Source!
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="display: none;"></button>
+        </div>
+        
+
+        <div class="row">
+            <div class="col-12 text-center">
+                <h1>SMART COFFEE PUMP</h1>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-body text-center d-flex flex-column justify-content-center align-items-center">
+                        <h4>Status</h4>
+                        <button id="status" type="button" class="btn btn-success btn-lg"
+                            style="margin-top: auto; margin-bottom: auto;">Success</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h4>Water Level</h4>
+                        <div id="echart2" style="height: 400px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12 mb-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h4>Distance History</h4>
+                        <div id="echart1" style="height: 400px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <script src="../static/jquery.min.js"></script>
+    <script src="../static/bootstrap.min.js"></script>
+    <script src="../static/echarts.min.js"></script>
+    <script type="text/javascript">
+        // 等待文档加载完毕再执行
+        $(document).ready(function () {
+            echarts_1();
+            setInterval(echarts_1, 1000); // 每隔1000ms刷新一次
+        });
+
+        function echarts_1() {
+            // 发起AJAX请求获取数据
+            $.ajax({
+                type: "GET",
+                url: "get_data", // 这里填写你的Flask服务器地址
+                dataType: "json",
+                success: function (data) {
+
+                    console.log("success!");
+                    console.log("data:", data);
+                    console.log("data.date_ls:", data.data.date);
+                    console.log("data.distance_ls:", data.data.distance);
+
+                    var xData = data.data.date.reverse();
+                    var yData = data.data.distance.reverse();
+                    console.log(xData, yData);
+                    message = data.message
+
+                    // 更新HTML元素的内容
+                    var statusElement = document.querySelector("#status");
+                    statusElement.textContent = message;
+                    statusElement.classList.remove("btn-danger", "btn-info", "btn-warning", "btn-secondary", "btn-success");
+
+                    switch (message) {
+                        case "Sensor Error!":
+                            statusElement.classList.add("btn-danger");
+                            break;
+                        case "Water pouring":
+                            statusElement.classList.add("btn-info");
+                            break;
+                        case "Overflow!":
+                            statusElement.classList.add("btn-warning");
+                            break;
+                        case "Low Water Level":
+                            statusElement.classList.add("btn-warning");
+                            break;
+                        case "Empty Water Source!":
+                            statusElement.classList.add("btn-secondary");
+                            break;
+                        case "Water Level OK":
+                            statusElement.classList.add("btn-success");
+                            break;  
+                        default:
+                            // 默认情况下，保持按钮的默认样式
+                            break;
+                    }
+                    // 获取所有具有相同类名的警告框元素
+                    var alertElements = document.querySelectorAll(".custom-alert");
+
+                    // 关闭所有同类的警告框（如果已显示）
+                    alertElements.forEach(function(alertElement) {
+                        if (alertElement.style.display === "block") {
+                            alertElement.style.display = "none";
+                        }
+                    });
+
+                    switch (message) {
+                        case "Sensor Error!":
+                            document.querySelector(".alert-danger.custom-alert").style.display = "block";
+                            break;
+                        case "Water pouring":
+                            document.querySelector(".alert-info.custom-alert").style.display = "block";
+                            break;
+                        case "Overflow!":
+                            document.querySelector("#Overflow").style.display = "block";
+                            break;
+                        case "Low Water Level":
+                            document.querySelector(".alert-warning.custom-alert").style.display = "block";
+                            break;
+                        case "Empty Water Source!":
+                            document.querySelector(".alert-secondary.custom-alert").style.display = "block";
+                            break;
+                        default:
+                            // 默认情况下，不显示任何警告框
+                            break;
+                    }
+
+                    // 初始化ECharts实例
+                    var myChart = echarts.init(document.getElementById('echart1'));
+
+                    // 配置选项，使用从服务器获取的数据
+                    var option = {
+                        xAxis: {
+                            type: 'category',
+                            data: xData
+                        },
+                        yAxis: {
+                            type: 'value'
+                        },
+                        series: [
+                            {
+                                data: yData,
+                                type: 'line',
+                                smooth: true
+                            }
+                        ]
+                    };
+
+                    // 使用配置项和数据渲染图表
+                    myChart.setOption(option);
+
+                    // 初始化ECharts实例
+                    var myChart = echarts.init(document.getElementById('echart2'));
+
+                    // 配置选项，使用从服务器获取的数据
+                    var option2 = {
+                        tooltip: {
+                            formatter: '{a} <br/>{b} : {c}%'
+                        },
+                        series: [
+                            {
+                                name: 'Pressure',
+                                type: 'gauge',
+                                detail: {
+                                    formatter: '{value}'
+                                },
+                                data: [
+                                    {
+                                        value: data.waterLevel,
+                                        name: 'Percentage'
+                                    }
+                                ]
+                            }
+                        ]
+                    };
+
+                    // 使用配置项和数据渲染图表
+                    myChart.setOption(option2);
+
+                    // 当窗口大小变化时，调整图表大小
+                    window.addEventListener("resize", function () {
+                        myChart.resize();
+                    });
+                },
+                error: function (error) {
+                    console.log("AJAX请求失败", error);
+                }
+            });
+        }
+    </script>
+
+</body>
+
+</html>
