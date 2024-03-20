@@ -8,7 +8,7 @@ Automatic water pump system for coffee machine using the HC-SR04 sensor, Raspber
 1. Install dependencies:
 
    ```sh
-   sudo pip3 install cloud4rpi hcsr04sensor
+   sudo pip3 install hcsr04sensor
    ```
 
 2. Run the [main.py](main.py):
